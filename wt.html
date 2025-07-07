@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writing Progress Tracker</title>
+    <meta name="description" content="Track your daily writing goals and visualize your progress">
+    <meta name="theme-color" content="#8b5cf6">
+    <link rel="manifest" href="#" id="manifest-placeholder">
+    <link rel="apple-touch-icon" href="#" id="apple-touch-icon">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Writing Tracker">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f3ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-5 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        .card h2, .card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #374151;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.15s ease-in-out;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-row input {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        .btn:hover {
+            background: #059669;
+        }
+
+        .progress-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 16px;
+            background: #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+            transition: width 0.5s ease-in-out;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            margin-top: 8px;
+        }
+
+        .progress-left {
+            color: #6366f1;
+            font-weight: 500;
+        }
+
+        .completion-estimate {
+            text-align: center;
+            font-size: 0.875rem;
+            color: #6b7280;
+            background: #f9fafb;
+            padding: 8px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .completion-estimate .highlight {
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .stat-card .icon {
+            width: 32px;
+            height: 32px;
+            margin: 0 auto 8px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .label {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .icon-blue { background: #dbeafe; color: #3b82f6; }
+        .icon-indigo { background: #e0e7ff; color: #6366f1; }
+        .icon-green { background: #d1fae5; color: #10b981; }
+        .icon-purple { background: #ede9fe; color: #8b5cf6; }
+        .icon-orange { background: #fed7aa; color: #f97316; }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 16px;
+        }
+
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .entries-table th,
+        .entries-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .entries-table th {
+            font-weight: 600;
+            color: #374151;
+            background: #f9fafb;
+        }
+
+        .progress-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mini-progress-bar {
+            width: 60px;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: #10b981;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .export-section {
+            margin-top: 32px;
+            text-align: center;
+        }
+
+        .export-section .btn {
+            margin: 0 8px;
+        }
+
+        .btn-secondary {
+            background: #6366f1;
+        }
+
+        .btn-secondary:hover {
+            background: #4f46e5;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #8b5cf6;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        .file-input-label:hover {
+            background: #7c3aed;
+        }
+
+        .install-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .install-button:hover {
+            background: #7c3aed;
+            transform: translateY(-2px);
+        }
+
+        .install-button.hidden {
+            display: none;
+        }
+
+        .offline-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .offline-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .offline-indicator.online {
+            background: #10b981;
+        }
+
+        @media (max-width: 768px) {
+            .grid-5 {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .input-row {
+                flex-direction: column;
+            }
+            
+            .progress-stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-indicator" id="offline-indicator">
+        📶 Back online!
+    </div>
+    
+    <button class="install-button hidden" id="install-button">
+        📱 Install App
+    </button>
+
+    <div class="container">
+        <div class="header">
+            <h1>📝 Writing Progress Tracker</h1>
+            <p>Track your daily writing goals and visualize your progress</p>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <h2>🎯 Goals</h2>
+                <div class="input-group">
+                    <label for="daily-goal">Daily Word Count Goal</label>
+                    <input type="number" id="daily-goal" value="1000" placeholder="Enter daily goal">
+                </div>
+                <div class="input-group">
+                    <label for="overall-goal">Overall Novel Goal</label>
+                    <input type="number" id="overall-goal" value="75000" placeholder="Enter overall goal">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>➕ Add Today's Progress</h2>
+                <div class="input-group">
+                    <label for="entry-date">Date</label>
+                    <input type="date" id="entry-date">
+                </div>
+                <div class="input-group">
+                    <label for="words-written">Words Written</label>
+                    <div class="input-row">
+                        <input type="number" id="words-written" placeholder="Words written today">
+                        <button class="btn" onclick="addEntry()">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <h2>📚 Novel Progress</h2>
+            <div class="progress-info">
+                <span id="current-words">0 words</span>
+                <span id="goal-words">75,000 words</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-stats">
+                <span class="progress-left" id="progress-percent">0% Complete</span>
+                <span id="remaining-words">75,000 words remaining</span>
+            </div>
+            <div class="completion-estimate hidden" id="completion-estimate">
+                At your current pace, you'll finish in approximately <span class="highlight" id="days-to-complete">0 days</span>
+            </div>
+        </div>
+
+        <div class="grid grid-5">
+            <div class="stat-card">
+                <div class="icon icon-blue">📖</div>
+                <div class="value" id="total-words">0</div>
+                <div class="label">Total Words</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon icon-indigo">🎯</div>
+                <div class="value" id="words-left">75,000</div>
+                <div class="label">Words Left</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon icon-green">📈</div>
+                <div class="value" id="daily-average">0</div>
+                <div class="label">Daily Average</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon icon-purple">📅</div>
+                <div class="value" id="days-tracked">0</div>
+                <div class="label">Days Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon icon-orange">🎯</div>
+                <div class="value" id="daily-goal-rate">0%</div>
+                <div class="label">Daily Goal Rate</div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <h3>📈 Cumulative Progress</h3>
+                <div class="chart-container">
+                    <canvas id="cumulative-chart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📊 Daily Word Count</h3>
+                <div class="chart-container">
+                    <canvas id="daily-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="recent-entries" style="display: none;">
+            <h3>📋 Recent Entries</h3>
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Words Written</th>
+                        <th>Goal Progress</th>
+                    </tr>
+                </thead>
+                <tbody id="entries-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="export-section">
+            <h3>💾 Save & Load Your Progress</h3>
+            <p style="margin-bottom: 16px; color: #6b7280;">Export your data to save it, or import previously saved data</p>
+            <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
+            <label for="import-file" class="file-input-label">Import Data</label>
+            <input type="file" id="import-file" class="file-input" accept=".json" onchange="importData(this)">
+        </div>
+    </div>
+
+    <script>
+        // PWA Variables
+        let deferredPrompt;
+        let isOnline = navigator.onLine;
+
+        // Data storage
+        let dailyEntries = [];
+        let dailyGoal = 1000;
+        let overallGoal = 75000;
+        let cumulativeChart = null;
+        let dailyChart = null;
+
+        // Initialize PWA
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePWA();
+            loadDataFromStorage();
+            document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+            updateStats();
+            updateCharts();
+        });
+
+        function initializePWA() {
+            // Create manifest
+            const manifest = {
+                name: "Writing Progress Tracker",
+                short_name: "WritingTracker",
+                description: "Track your daily writing goals and visualize your progress",
+                start_url: "/",
+                display: "standalone",
+                background_color: "#f5f3ff",
+                theme_color: "#8b5cf6",
+                orientation: "portrait-primary",
+                icons: [
+                    {
+                        src: generateIcon(192),
+                        sizes: "192x192",
+                        type: "image/png",
+                        purpose: "any maskable"
+                    },
+                    {
+                        src: generateIcon(512),
+                        sizes: "512x512",
+                        type: "image/png",
+                        purpose: "any maskable"
+                    }
+                ],
+                categories: ["productivity", "writing", "education"]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const manifestURL = URL.createObjectURL(manifestBlob);
+            document.getElementById('manifest-placeholder').href = manifestURL;
+
+            // Set app icons
+            const icon = generateIcon(180);
+            document.getElementById('apple-touch-icon').href = icon;
+
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                registerServiceWorker();
+            }
+
+            // Handle install prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('install-button').classList.remove('hidden');
+            });
+
+            // Handle install button click
+            document.getElementById('install-button').addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                            document.getElementById('install-button').classList.add('hidden');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            });
+
+            // Handle online/offline status
+            window.addEventListener('online', () => {
+                isOnline = true;
+                showOfflineIndicator('📶 Back online!', 'online');
+            });
+
+            window.addEventListener('offline', () => {
+                isOnline = false;
+                showOfflineIndicator('📡 You\'re offline', 'offline');
+            });
+        }
+
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background
+            ctx.fillStyle = '#8b5cf6';
+            ctx.fillRect(0, 0, size, size);
+
+            // Icon text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('📝', size / 2, size / 2);
+
+            return canvas.toDataURL();
+        }
+
+        function registerServiceWorker() {
+            // Service worker as a data URL
+            const swCode = `
+                const CACHE_NAME = 'writing-tracker-v1';
+                const urlsToCache = [
+                    '/',
+                    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js'
+                ];
+
+                self.addEventListener('install', (event) => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then((cache) => cache.addAll(urlsToCache))
+                    );
+                });
+
+                self.addEventListener('fetch', (event) => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then((response) => {
+                                return response || fetch(event.request);
+                            })
+                    );
+                });
+
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(
+                        caches.keys().then((cacheNames) => {
+                            return Promise.all(
+                                cacheNames.map((cacheName) => {
+                                    if (cacheName !== CACHE_NAME) {
+                                        return caches.delete(cacheName);
+                                    }
+                                })
+                            );
+                        })
+                    );
+                });
+            `;
+
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swURL = URL.createObjectURL(blob);
+
+            navigator.serviceWorker.register(swURL)
+                .then((registration) => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        }
+
+        function showOfflineIndicator(message, type) {
+            const indicator = document.getElementById('offline-indicator');
+            indicator.textContent = message;
+            indicator.className = `offline-indicator show ${type}`;
+            
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 3000);
+        }
+
+        function loadDataFromStorage() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('writingTrackerData') || '{}');
+                if (saved.dailyEntries) {
+                    dailyEntries = saved.dailyEntries;
+                    dailyGoal = saved.dailyGoal || 1000;
+                    overallGoal = saved.overallGoal || 75000;
+
+                    document.getElementById('daily-goal').value = dailyGoal;
+                    document.getElementById('overall-goal').value = overallGoal;
+                }
+            } catch (e) {
+                console.log('No saved data found');
+            }
+        }
+
+        function saveDataToStorage() {
+            try {
+                const data = {
+                    dailyEntries,
+                    dailyGoal,
+                    overallGoal,
+                    lastSaved: new Date().toISOString()
+                };
+                localStorage.setItem('writingTrackerData', JSON.stringify(data));
+            } catch (e) {
+                console.log('Failed to save data');
+            }
+        }
+
+        function addEntry() {
+            const date = document.getElementById('entry-date').value;
+            const words = parseInt(document.getElementById('words-written').value) || 0;
+            
+            if (!date || words < 0) {
+                alert('Please enter a valid date and word count');
+                return;
+            }
+
+            // Update goals
+            dailyGoal = parseInt(document.getElementById('daily-goal').value) || 1000;
+            overallGoal = parseInt(document.getElementById('overall-goal').value) || 75000;
+
+            // Check if entry exists for this date
+            const existingIndex = dailyEntries.findIndex(entry => entry.date === date);
+            
+            if (existingIndex >= 0) {
+                dailyEntries[existingIndex].words = words;
+            } else {
+                dailyEntries.push({ date, words });
+            }
+
+            // Sort entries by date
+            dailyEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Clear input
+            document.getElementById('words-written').value = '';
+
+            // Save to storage
+            saveDataToStorage();
+
+            // Update UI
+            updateStats();
+            updateCharts();
+            updateRecentEntries();
+        }
+
+        function updateStats() {
+            const totalWords = dailyEntries.reduce((sum, entry) => sum + entry.words, 0);
+            const averageWords = dailyEntries.length > 0 ? Math.round(totalWords / dailyEntries.length) : 0;
+            const remainingWords = Math.max(0, overallGoal - totalWords);
+            const overallProgress = (totalWords / overallGoal) * 100;
+            const daysToComplete = averageWords > 0 ? Math.ceil(remainingWords / averageWords) : 0;
+
+            // Update progress bar
+            document.getElementById('progress-fill').style.width = Math.min(100, overallProgress) + '%';
+            document.getElementById('current-words').textContent = totalWords.toLocaleString() + ' words';
+            document.getElementById('goal-words').textContent = overallGoal.toLocaleString() + ' words';
+            document.getElementById('progress-percent').textContent = overallProgress.toFixed(1) + '% Complete';
+            document.getElementById('remaining-words').textContent = remainingWords.toLocaleString() + ' words remaining';
+
+            // Update completion estimate
+            const estimateEl = document.getElementById('completion-estimate');
+            if (daysToComplete > 0 && remainingWords > 0) {
+                document.getElementById('days-to-complete').textContent = daysToComplete + ' days';
+                estimateEl.classList.remove('hidden');
+            } else {
+                estimateEl.classList.add('hidden');
+            }
+
+            // Update stat cards
+            document.getElementById('total-words').textContent = totalWords.toLocaleString();
+            document.getElementById('words-left').textContent = remainingWords.toLocaleString();
+            document.getElementById('daily-average').textContent = averageWords.toLocaleString();
+            document.getElementById('days-tracked').textContent = dailyEntries.length.toString();
+            document.getElementById('daily-goal-rate').textContent = Math.round((averageWords / dailyGoal) * 100) + '%';
+        }
+
+        function updateCharts() {
+            const ctx1 = document.getElementById('cumulative-chart').getContext('2d');
+            const ctx2 = document.getElementById('daily-chart').getContext('2d');
+
+            // Prepare data
+            const labels = dailyEntries.map(entry => new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            const cumulativeData = [];
+            const goalLineData = [];
+            let cumulative = 0;
+
+            dailyEntries.forEach((entry, index) => {
+                cumulative += entry.words;
+                cumulativeData.push(cumulative);
+                goalLineData.push(dailyGoal * (index + 1));
+            });
+
+            // Destroy existing charts
+            if (cumulativeChart) cumulativeChart.destroy();
+            if (dailyChart) dailyChart.destroy();
+
+            // Cumulative chart
+            cumulativeChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Words',
+                        data: cumulativeData,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: false
+                    }, {
+                        label: 'Goal Trajectory',
+                        data: goalLineData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Daily chart
+            dailyChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Words Written',
+                        data: dailyEntries.map(entry => entry.words),
+                        backgroundColor: '#10b981',
+                        borderColor: '#059669',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRecentEntries() {
+            const tbody = document.getElementById('entries-tbody');
+            const recentEntries = dailyEntries.slice(-7).reverse();
+            
+            if (recentEntries.length === 0) {
+                document.getElementById('recent-entries').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('recent-entries').style.display = 'block';
+            tbody.innerHTML = '';
+
+            recentEntries.forEach(entry => {
+                const row = tbody.insertRow();
+                const dateCell = row.insertCell(0);
+                const wordsCell = row.insertCell(1);
+                const progressCell = row.insertCell(2);
+
+                dateCell.textContent = new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                wordsCell.textContent = entry.words.toLocaleString();
+                
+                const progressPercent = Math.round((entry.words / dailyGoal) * 100);
+                progressCell.innerHTML = `
+                    <div class="progress-cell">
+                        <div class="mini-progress-bar">
+                            <div class="mini-progress-fill" style="width: ${Math.min(100, progressPercent)}%"></div>
+                        </div>
+                        <span>${progressPercent}%</span>
+                    </div>
+                `;
+            });
+        }
+
+        function exportData() {
+            const data = {
+                dailyEntries,
+                dailyGoal,
+                overallGoal,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'writing-progress-data.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported.dailyEntries)) {
+                        dailyEntries = imported.dailyEntries;
+                        dailyGoal = imported.dailyGoal || 1000;
+                        overallGoal = imported.overallGoal || 75000;
+
+                        document.getElementById('daily-goal').value = dailyGoal;
+                        document.getElementById('overall-goal').value = overallGoal;
+
+                        saveDataToStorage();
+                        updateStats();
+                        updateCharts();
+                        updateRecentEntries();
+
+                        alert('Data imported successfully!');
+                    } else {
+                        alert('Invalid data format.');
+                    }
+                } catch (err) {
+                    alert('Failed to import data: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
